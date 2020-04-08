@@ -22,6 +22,30 @@ app.use(function (req, res, next) {
     next();
 });
 
+const defaultCatch = (res, err) => {
+    res.status(400)
+        .json({
+            err: err.message
+        })
+}
+
+app.get('/shows/:show', async (req, res) => {
+    const show = req.params.show;
+    const authHeader = req.headers.authorization;
+
+    fetch(`https://api.spotify.com/v1/shows/${show}`, {
+        method: 'GET',
+        headers:{
+            Authorization: authHeader,
+        }
+    })
+    .then(ret => ret.json())
+    .then(show => {
+        res.json(show)
+    })
+    .catch(err => defaultCatch(res, err));
+})
+
 
 app.get('/shows/:show/episodes', async (req, res) => {
     const show = req.params.show;
@@ -49,10 +73,7 @@ app.get('/shows/:show/episodes', async (req, res) => {
         .then(ret => ret.json())
         .then(ret => ret.items)
         .catch(err => {
-            res.status(400)
-                .json({
-                    err: err.message
-                })
+            defaultCatch(res, err);
             failed = true;
         });
 
@@ -104,12 +125,8 @@ app.get('/shows', (req, res) => {
     })
     .then(ret => ret.shows.items)
     .then(ret => res.json(ret))
-    .catch(err => {
-        res.status(400)
-            .json({
-                err: err.message
-            })
-    })
+    .catch(err => defaultCatch(res, err));
+
 })
 
 
@@ -154,16 +171,25 @@ app.post('/token', (req, res) => {
             
         return ret;
     })
+    .then((ret) => {
+        return fetch('https://api.spotify.com/v1/me', {
+            method: 'GET',
+            headers: {
+                Authorization:  'Bearer ' + ret.access_token
+            }
+        })
+        .then(me => me.json())
+        .then(me => {
+            ret.user = me;
+            return ret;
+        })
+    })
     .then((x) => {
         x.expire_date = new Date();
         x.expire_date.setSeconds(x.expire_date.getSeconds() + x.expires_in);
         res.json(x);
     })
-    .catch(err => {
-        res.status(500).json({
-            err: err.message
-        })
-    })
+    .catch(err => defaultCatch(res, err));
 });
 
 
