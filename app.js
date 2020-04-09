@@ -7,7 +7,8 @@ require('dotenv').config();
 
 const PORT = 7788;
 const { CLIENT_ID, CLIENT_SECRET, SCOPE } = process.env;
-const fetch = require('node-fetch');
+
+const { defaultCatch, callAPI, getTokenCode, getTokenRefresh } = require('./spotify-api')(CLIENT_ID, CLIENT_SECRET);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true}));
@@ -22,34 +23,34 @@ app.use(function (req, res, next) {
     next();
 });
 
-const defaultCatch = (res, err) => {
-    res.status(400)
-        .json({
-            err: err.message
-        })
-}
+
+app.use(function (err, req, res, next) {
+    if(err) {
+        res.status(400);
+        //log later
+    }
+    else
+        next();
+});
+
 
 app.get('/shows/:show', async (req, res) => {
     const show = req.params.show;
-    const authHeader = req.headers.authorization;
+    const auth = req.headers.authorization;
 
-    fetch(`https://api.spotify.com/v1/shows/${show}`, {
-        method: 'GET',
-        headers:{
-            Authorization: authHeader,
-        }
-    })
-    .then(ret => ret.json())
-    .then(show => {
-        res.json(show)
-    })
-    .catch(err => defaultCatch(res, err));
-})
+
+    return callAPI('/shows/' + show, auth)
+        .then(ret => res.json(ret))
+        .catch(err => defaultCatch(res, err));
+
+});
 
 
 app.get('/shows/:show/episodes', async (req, res) => {
     const show = req.params.show;
-    const authHeader = req.headers.authorization;
+    const auth = req.headers.authorization;
+
+
     let { search, offset } = req.query;
 
     if(search)
@@ -64,13 +65,12 @@ app.get('/shows/:show/episodes', async (req, res) => {
     let episodesOffset = [];
 
     do {
-        episodesOffset = await fetch(`https://api.spotify.com/v1/shows/${show}/episodes?limit=50&offset=${offset}`, {
-            method: 'GET',
-            headers:{
-                Authorization: authHeader,
+        episodesOffset = await callAPI('/shows/' + show + '/episodes', auth, {
+            query: {
+                limit: 50,
+                offset
             }
         })
-        .then(ret => ret.json())
         .then(ret => ret.items)
         .catch(err => {
             defaultCatch(res, err);
@@ -104,24 +104,17 @@ app.get('/shows/:show/episodes', async (req, res) => {
 
 
 app.get('/shows', (req, res) => {
-    const authHeader = req.headers.authorization;
+    const auth = req.headers.authorization;
     const { search } = req.query;
-
     if(!search)
         return res.json([]);
 
-    fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(search)}&type=show&market=BR`, {
-        method: 'GET',
-        headers:{
-            Authorization: authHeader,
+    callAPI('/search', auth, {
+        query: {
+            q: encodeURIComponent(search),
+            type: 'show',
+            market: 'BR'
         }
-    })
-    .then(ret => ret.json())
-    .then(ret => {
-        if(ret.error)
-            throw new Error(ret.error.message);
-            
-        return ret;
     })
     .then(ret => ret.shows.items)
     .then(ret => res.json(ret))
@@ -143,52 +136,25 @@ app.get('/login', (req, res) => {
     res.redirect('https://accounts.spotify.com/authorize?' + queryString.stringify(queryParams));
 });
 
-const base64 = text => Buffer.from(text).toString('base64');
 
+app.post('/refresh_token', (req, res) => {
+    const { refresh_token } = req.body;
+
+    getTokenRefresh({
+       refresh_token
+    })
+    .then(auth => res.json(auth))
+    .catch(err => defaultCatch(res, err));
+});
 
 app.post('/token', (req, res) => {
     const { redirect_uri, code } = req.body;
 
-    const body = {
-        grant_type: 'authorization_code',
+    getTokenCode({
         code,
-        redirect_uri,
-    };
-
-    const headers = new fetch.Headers();
-    headers.append('Authorization', 'Basic ' + base64(`${CLIENT_ID}:${CLIENT_SECRET}`));
-    headers.append('Content-Type', 'application/x-www-form-urlencoded');
-
-    fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        body: queryString.stringify(body),
-        headers
+        redirect_uri
     })
-    .then(x => x.json())
-    .then(ret => {
-        if(ret.error)
-            throw new Error(ret.error.message);
-            
-        return ret;
-    })
-    .then((ret) => {
-        return fetch('https://api.spotify.com/v1/me', {
-            method: 'GET',
-            headers: {
-                Authorization:  'Bearer ' + ret.access_token
-            }
-        })
-        .then(me => me.json())
-        .then(me => {
-            ret.user = me;
-            return ret;
-        })
-    })
-    .then((x) => {
-        x.expire_date = new Date();
-        x.expire_date.setSeconds(x.expire_date.getSeconds() + x.expires_in);
-        res.json(x);
-    })
+    .then(auth => res.json(auth))
     .catch(err => defaultCatch(res, err));
 });
 
