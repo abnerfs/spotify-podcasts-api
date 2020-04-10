@@ -116,7 +116,7 @@ app.get('/shows', (req, res) => {
 
     callAPI('/search', auth, {
         query: {
-            q: encodeURIComponent(search),
+            q: search,
             type: 'show',
             market: 'BR'
         }
