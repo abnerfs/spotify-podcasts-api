@@ -129,13 +129,14 @@ app.get('/shows', (req, res) => {
 
 
 app.get('/login', (req, res) => {
-    const { redirect_uri } = req.query;
+    const { redirect_uri, returnUrl } = req.query;
 
     const queryParams = {
         response_type: 'code',
         client_id: CLIENT_ID,
         scope: SCOPE,
-        redirect_uri
+        redirect_uri,
+        state : returnUrl
     };
 
     res.redirect('https://accounts.spotify.com/authorize?' + queryString.stringify(queryParams));
