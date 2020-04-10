@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const queryString = require('query-string');
 require('dotenv').config();
 
-const PORT = 7788;
+const PORT = process.env.PORT || 7788;
 const { CLIENT_ID, CLIENT_SECRET, SCOPE } = process.env;
 
 const { defaultCatch, callAPI, getTokenCode, getTokenRefresh } = require('./spotify-api')(CLIENT_ID, CLIENT_SECRET);
@@ -17,7 +17,7 @@ app.use(morgan('dev'));
 app.use(express.static(__dirname + '/public'))
 
 app.use(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200');
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200', 'abnerfs-spotify-ui.herokuapp.com', 'abnerfs.dev');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Authorization');
     next();
