@@ -19,7 +19,7 @@ app.use(morgan('dev'));
 app.use(express.static(__dirname + '/public'))
 
 app.use(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200', 'abnerfs-spotify-ui.herokuapp.com', 'abnerfs.dev');
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:4200', 'https://abnerfs-spotify-ui.herokuapp.com', 'https://abnerfs.dev');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Authorization');
     next();
