@@ -3,7 +3,9 @@ const app = express();
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const queryString = require('query-string');
-require('dotenv').config();
+
+if(process.env.NODE_ENV !== 'production')
+    require('dotenv').config();
 
 const PORT = process.env.PORT || 7788;
 const { CLIENT_ID, CLIENT_SECRET, SCOPE } = process.env;
