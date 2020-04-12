@@ -19,7 +19,7 @@ app.use(morgan('dev'));
 app.use(express.static(__dirname + '/public'))
 
 app.use(function (req, res, next) {
-    const allowed = ['http://localhost:4200', 'https://abnerfs-spotify-ui.herokuapp.com', 'https://abnerfs.dev'];
+    const allowed = ['http://localhost:4200', 'https://abnerfs-spotify-ui.herokuapp.com', 'https://spotify.abnerfs.dev'];
     if(allowed.includes(req.headers.origin))
         res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
         
@@ -27,6 +27,11 @@ app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Authorization');
     next();
 });
+
+
+app.get('/.well-known/acme-challenge/dZ9PL4mNHQA8ZBOlCN1KpBAnIrAcSBI--Afr-ceCj-Q', (req, res) => {
+    res.send('dZ9PL4mNHQA8ZBOlCN1KpBAnIrAcSBI--Afr-ceCj-Q.qbaVDcMj8pzK4xg4Dbw6i8qOB_vhZ6uz-VObl9SrTE0');
+})
 
 
 app.use(function (err, req, res, next) {
