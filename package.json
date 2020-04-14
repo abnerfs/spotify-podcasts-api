@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start" : "node app"
+    "start": "node app"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +16,8 @@
     "express": "^4.17.1",
     "morgan": "^1.10.0",
     "node-fetch": "^2.6.0",
-    "query-string": "^6.11.1"
+    "query-string": "^6.11.1",
+    "redis": "^3.0.2",
+    "url": "^0.11.0"
   }
 }
