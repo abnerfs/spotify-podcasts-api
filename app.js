@@ -109,7 +109,7 @@ const STEP_EPISODES = 50;
 
 
 const getEpisodesOffset = (offset, show, auth) => {    
-    const page = Math.ceil(offset / STEP_EPISODES) + 1;
+    const page = Math.ceil(offset / STEP_EPISODES);
     const key = `show:${show}:episodes:${page}`;
 
     return getDataQueue(key, 300, () => {
