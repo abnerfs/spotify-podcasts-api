@@ -124,54 +124,73 @@ const getEpisodesOffset = (offset, show, auth) => {
 }
 
 
-app.get('/shows/:show/episodes', async (req, res) => {
+
+app.get('/shows/:show/total', async(req, res) => {
     const show = req.params.show;
     const auth = req.headers.authorization;
 
+    getEveryEpisode(show, auth)
+        .then((episodes) => {
+            const total = {
+                count: episodes.length,
+                total_ms: episodes
+                    .map(x => x.duration_ms)
+                    .reduce((a, b) => a + b)
+            };
+            res.json(total);
+        })
+        .catch(err => {
+            defaultCatch(res, err);
+        })
+});
 
-    let { search, offset } = req.query;
 
-    if(search)
-        search = search.toUpperCase();
-
-    if(!offset || search)
-        offset = 0;
-
+const getEveryEpisode = async(show, auth) => {
+    let offset = 0;
     let episodes = [];
-    let failed = false;
-
     let episodesOffset = [];
 
     do {
         episodesOffset = await getEpisodesOffset(offset, show, auth)
-            .catch(err => {
-                defaultCatch(res, err);
-                failed = true;
-            });
-
-        if(failed)
-            break;
-
         episodes = episodes.concat(episodesOffset);
-
-        if(!search)
-            break;
-
-        offset += 50;
+        offset += STEP_EPISODES;
     }
-    while(episodesOffset.length == 50)
+    while(episodesOffset.length == STEP_EPISODES)
+    return episodes;
+}
 
+
+app.get('/shows/:show/episodes', async (req, res) => {
+    const show = req.params.show;
+    const auth = req.headers.authorization;
+    let { search, offset } = req.query;
+
+    let promiseEpisodes = undefined;
     if(search) {
-        episodes = episodes.filter(ep => {
-            const name = ep.name.toUpperCase();
-            const desc = ep.description.toUpperCase()
+        search = search.toUpperCase();
+        promiseEpisodes = getEveryEpisode(show, auth)
+            .then(episodes => episodes.filter(ep => {
+                const name = ep.name.toUpperCase();
+                const desc = ep.description.toUpperCase()
 
-            return name.search(search) > -1 || desc.search(search) > -1;
-        })
+                return name.search(search) > -1 || desc.search(search) > -1;
+            }));
+    }
+    else {
+        if(!offset)
+            offset = 0;
+
+        promiseEpisodes =  
+            getEpisodesOffset(offset, show, auth)                
     }
 
-    if(!failed)
-        res.json(episodes);
+    promiseEpisodes
+        .then(episodes => {
+            res.json(episodes);
+        })
+        .catch(err => {
+            defaultCatch(res, err);
+        });
 })
 
 
